@@ -1,5 +1,10 @@
 package mapreduce
 
+import (
+	. "menghuibasic"
+	"sort"
+)
+
 func doReduce(
 	jobName string, // the name of the whole MapReduce job
 	reduceTask int, // which reduce task this is
@@ -44,4 +49,45 @@ func doReduce(
 	//
 	// Your code here (Part I).
 	//
+
+	/*
+		Output data for result file, one reduce task has one result file.
+	*/
+	resultMap := make(map[string][]string)
+	/*
+		Iterate map tasks, for each map task, pick one of its intermediate file
+	*/
+	for i := 0; i < nMap; i++ {
+		fileName := reduceName(jobName, i, reduceTask)
+		var intermediate MapReduceIntermediateFileJSON
+		ReadFileToJSON(fileName, &intermediate)
+		for k, v := range intermediate.IntermediateCollection {
+			if resultMap[k] == nil {
+				resultMap[k] = make([]string, 0)
+			}
+			resultMap[k] = append(resultMap[k], v...)
+		}
+	}
+
+	/*
+		Result file should be like this
+		{"Key":"a1","Value":"b1"}
+		{"Key":"a2","Value":"b2"}
+		{"Key":"a3","Value":"b3"}
+		{"Key":"a4","Value":"b4"}
+		Therefore, keys need to be sorted
+	*/
+	reducedResultMap := make(map[string]string)
+	keys := make([]string, 0)
+	for k, v := range resultMap {
+		reducedResultMap[k] = reduceF(k, v)
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	keyValueList := make([]interface{}, 0)
+	for _, key := range keys {
+		keyValueList = append(keyValueList, KeyValue{key, reducedResultMap[key]})
+	}
+
+	EncodeJSONToFile(outFile, keyValueList...)
 }
