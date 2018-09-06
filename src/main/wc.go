@@ -3,7 +3,11 @@ package main
 import (
 	"fmt"
 	"mapreduce"
+	"menghuibasic"
 	"os"
+	"strconv"
+	"strings"
+	"unicode"
 )
 
 //
@@ -15,6 +19,22 @@ import (
 //
 func mapF(filename string, contents string) []mapreduce.KeyValue {
 	// Your code here (Part II).
+	result := make([]mapreduce.KeyValue, 0)
+	if len(contents) == 0 {
+		return result
+	}
+	nonLetterSeparatorFunc := func(c rune) bool {
+		return !unicode.IsLetter(c)
+	}
+	words := strings.FieldsFunc(contents, nonLetterSeparatorFunc)
+	wordCountMap := make(map[string]int)
+	for _, word := range words {
+		wordCountMap[word]++
+	}
+	for key, count := range wordCountMap {
+		result = append(result, mapreduce.KeyValue{key, strconv.Itoa(count)})
+	}
+	return result
 }
 
 //
@@ -24,6 +44,13 @@ func mapF(filename string, contents string) []mapreduce.KeyValue {
 //
 func reduceF(key string, values []string) string {
 	// Your code here (Part II).
+	var adder = 0
+	for _, value := range values {
+		valueInt, err := strconv.Atoi(value)
+		menghuibasic.CheckError(err)
+		adder += valueInt
+	}
+	return strconv.Itoa(adder)
 }
 
 // Can be run in 3 ways:
