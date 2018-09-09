@@ -59,7 +59,7 @@ func doMap(
 	intermediates := make([]MapReduceIntermediateFileJSON, nReduce)
 	// Process inFile to KV pairs (e.g. <word, "">)
 	inFileStringContent := ReadFileAsString(inFile)
-	pairs := mapF("", inFileStringContent)
+	pairs := mapF(inFile, inFileStringContent)
 	/*
 		Initialize intermediate file json data
 	*/
