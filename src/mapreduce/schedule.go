@@ -1,6 +1,9 @@
 package mapreduce
 
-import "fmt"
+import (
+	"fmt"
+	"sync"
+)
 
 //
 // schedule() starts and waits for all tasks in the given phase (mapPhase
@@ -11,7 +14,12 @@ import "fmt"
 // suitable for passing to call(). registerChan will yield all
 // existing registered workers (if any) and new ones as they register.
 //
-func schedule(jobName string, mapFiles []string, nReduce int, phase jobPhase, registerChan chan string) {
+func schedule(
+	jobName string,
+	mapFiles []string,
+	nReduce int,
+	phase jobPhase,
+	registerChan chan string) {
 	var ntasks int
 	var n_other int // number of inputs (for reduce) or outputs (for map)
 	switch phase {
@@ -30,5 +38,38 @@ func schedule(jobName string, mapFiles []string, nReduce int, phase jobPhase, re
 	//
 	// Your code here (Part III, Part IV).
 	//
+	/*
+		1. Load all tasks into a channel
+		2. Until channel is empty
+			get worker, assign work -> use go
+			wait until all done.
+	*/
+	taskChan := make(chan DoTaskArgs, ntasks)
+	for i := 0; i < ntasks; i++ {
+		doTaskArg := DoTaskArgs{
+			JobName:       jobName,
+			File:          mapFiles[i],
+			Phase:         phase,
+			TaskNumber:    i,
+			NumOtherPhase: n_other,
+		}
+		taskChan <- doTaskArg
+	}
+	close(taskChan) // otherwise ranging over channel will not quit
+	var wg sync.WaitGroup
+	// Assign tasks
+	for task := range taskChan {
+		worker := <-registerChan // waiting for an available worker
+		wg.Add(1)
+		go func(args DoTaskArgs) {
+			succeed := call(worker, "Worker.DoTask", args, nil)
+			wg.Done()
+			if !succeed {
+				panic("RPC call failed somehow...")
+			}
+			registerChan <- worker
+		}(task)
+	}
+	wg.Wait() // make sure all task are done before executing next schedule()
 	fmt.Printf("Schedule: %v done\n", phase)
 }
