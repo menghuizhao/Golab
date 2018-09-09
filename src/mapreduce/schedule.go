@@ -59,17 +59,22 @@ func schedule(
 	var wg sync.WaitGroup
 	// Assign tasks
 	for task := range taskChan {
-		worker := <-registerChan // waiting for an available worker
 		wg.Add(1)
-		go func(args DoTaskArgs) {
-			succeed := call(worker, "Worker.DoTask", args, nil)
-			wg.Done()
-			if !succeed {
-				panic("RPC call failed somehow...")
-			}
-			registerChan <- worker
-		}(task)
+		go executeTask(&wg, registerChan, task)
 	}
 	wg.Wait() // make sure all task are done before executing next schedule()
 	fmt.Printf("Schedule: %v done\n", phase)
+}
+func executeTask(
+	wg *sync.WaitGroup, // need to use pointer to share one wg instead of copies
+	registerChan chan string,
+	args DoTaskArgs) {
+	worker := <-registerChan // waiting for an available worker
+	succeed := call(worker, "Worker.DoTask", args, nil)
+	if !succeed {
+		go executeTask(wg, registerChan, args)
+		return
+	}
+	wg.Done()
+	registerChan <- worker
 }
