@@ -1,6 +1,9 @@
 package menghuibasic
 
 /*
+	Lab 1: Map Reduce
+*/
+/*
 	JSON format for map reduce intermediate file
 	{
 		"IntermediateFileName": "inFile",
@@ -16,3 +19,7 @@ type MapReduceIntermediateFileJSON struct {
 	IntermediateFileName   string
 	IntermediateCollection map[string][]string
 }
+
+/*
+	Lab 2: Raft
+*/

@@ -5,6 +5,9 @@ import (
 	"os"
 )
 
+/*
+	Encode json data to file
+*/
 func EncodeJSONToFile(fileName string, data ...interface{}) {
 	f, createErr := os.Create(fileName)
 	CheckError(createErr)
@@ -16,6 +19,9 @@ func EncodeJSONToFile(fileName string, data ...interface{}) {
 	}
 }
 
+/*
+	Open a json file and output structured data specified by interface v
+*/
 func ReadFileToJSON(fileName string, v interface{}) interface{} {
 	data := ReadFileAsString(fileName)
 	err := json.Unmarshal([]byte(data), &v)
