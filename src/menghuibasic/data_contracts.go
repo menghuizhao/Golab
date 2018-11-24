@@ -23,3 +23,7 @@ type MapReduceIntermediateFileJSON struct {
 /*
 	Lab 2: Raft
 */
+type NullInt struct {
+	Value int
+	Valid bool
+}
