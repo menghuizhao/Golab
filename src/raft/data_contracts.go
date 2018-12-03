@@ -33,21 +33,18 @@ type Raft struct {
 	matchIndex []int
 
 	// Utility
-	followerTimer        TimerGroup
-	candidateTimer       *time.Timer
-	leaderTimer          *time.Timer
-	myVotes              int
-	replyVoteCounter     int
-	followerServiceChan  chan bool
-	candidateServiceChan chan bool
-	leaderServiceChan    chan bool
+	followerTimer       *time.Timer
+	candidateTimer      *time.Timer
+	myVotes             int
+	replyVoteCounter    int
+	resetFollowerChan   chan bool
+	resetCandidateChan  chan bool
+	restartElectionChan chan bool
+	stopFollowerChan    chan bool
+	stopCandidateChan   chan bool
+	stopLeaderChan      chan bool
 }
 
-type TimerGroup struct {
-	T         *time.Timer
-	StopChan  chan bool
-	ResetChan chan bool
-}
 type ApplyMsg struct {
 	CommandValid bool
 	Command      interface{}
@@ -89,6 +86,9 @@ type LogEntry struct {
 	Term    int
 }
 
+type GetProperties func(rf *Raft) interface{}
+type SetProperties func(rf *Raft)
+
 /*
 	Constants
 */
@@ -114,6 +114,6 @@ func (state State) String() string {
 	}
 }
 
-const candidateElectionTimeLimit = 500 * time.Millisecond
+const candidateElectionTimeLimit = 2000 * time.Millisecond
 
-const heartbeatInterval = 101 * time.Millisecond
+const heartbeatInterval = 201 * time.Millisecond

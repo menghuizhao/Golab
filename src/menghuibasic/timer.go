@@ -2,16 +2,17 @@ package menghuibasic
 
 import "time"
 
-func StopTimer(timers ...*time.Timer) {
-	for _, timer := range timers {
-		if timer != nil {
-			timer.Stop()
+func StopTimer(timer *time.Timer) {
+	if timer != nil {
+		// If by the time we stop the timer, the timer is already stopped/triggered
+		if !timer.Stop() && len(timer.C) > 0 {
+			<-timer.C // Drain the channel
 		}
 	}
 }
-func DeleteTimer(timers ...*time.Timer) {
+
+func StopTimers(timers ...*time.Timer) {
 	for _, timer := range timers {
 		StopTimer(timer)
-		timer = nil
 	}
 }
