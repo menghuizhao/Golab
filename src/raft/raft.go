@@ -43,7 +43,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	rf.restartElectionChan = make(chan bool, 1)
 	rf.stopCandidateChan = make(chan bool, 1)
 	rf.stopLeaderChan = make(chan bool, 1)
-
+	rf.timeout = getTimeout()
 	rf.mu.Lock()
 	rf.WriteLog("lock 1")
 	rf.votedFor = NullInt{Value: 0, Valid: false}
@@ -91,18 +91,19 @@ func (rf *Raft) follower() {
 func (rf *Raft) listenElectionTimeout() {
 	rf.mu.Lock()
 	rf.WriteLog("lock 4")
-	followerElectionTimeout := time.Duration(rand.Intn(3950)+50) * time.Millisecond
+
 	rf.WriteLog(
-		fmt.Sprintf("Initialize timer: followerElelection timeout to be %d ms", followerElectionTimeout),
+		fmt.Sprintf("Initialize timer: followerElelection timeout to be %d ms", rf.timeout/1000000),
 	)
-	rf.followerTimer = time.NewTimer(followerElectionTimeout)
+
+	rf.electionTimer = time.NewTimer(rf.timeout)
 	rf.mu.Unlock()
 	rf.WriteLog("Unlock 4")
 
 	// Start a service to monitor election time out
 	for {
 		select {
-		case <-rf.followerTimer.C:
+		case <-rf.electionTimer.C:
 
 			rf.mu.Lock()
 			rf.WriteLog("lock 5")
@@ -118,7 +119,7 @@ func (rf *Raft) listenElectionTimeout() {
 
 			rf.mu.Lock()
 			rf.WriteLog("lock 6")
-			StopTimer(rf.followerTimer)
+			StopTimer(rf.electionTimer)
 			rf.mu.Unlock()
 			rf.WriteLog("Unlock 6")
 
@@ -127,7 +128,7 @@ func (rf *Raft) listenElectionTimeout() {
 
 			rf.mu.Lock()
 			rf.WriteLog("lock 7")
-			StopTimer(rf.followerTimer)
+			StopTimer(rf.electionTimer)
 			rf.mu.Unlock()
 			rf.WriteLog("Unlock 7")
 
@@ -159,7 +160,7 @@ func (rf *Raft) listenLeaderElection() {
 
 	rf.mu.Lock()
 	rf.WriteLog("lock 9")
-	rf.candidateTimer = time.NewTimer(candidateElectionTimeLimit)
+	rf.electionTimer = time.NewTimer(rf.timeout)
 	rf.mu.Unlock()
 	rf.WriteLog("Unlock 9")
 
@@ -173,7 +174,7 @@ func (rf *Raft) listenLeaderElection() {
 
 			rf.mu.Lock()
 			rf.WriteLog("lock 10")
-			StopTimer(rf.candidateTimer)
+			StopTimer(rf.electionTimer)
 			rf.mu.Unlock()
 			rf.WriteLog("Unlock 10")
 
@@ -182,17 +183,17 @@ func (rf *Raft) listenLeaderElection() {
 
 			rf.mu.Lock()
 			rf.WriteLog("lock 11")
-			StopTimer(rf.candidateTimer)
-			rf.candidateTimer = time.NewTimer(candidateElectionTimeLimit)
+			StopTimer(rf.electionTimer)
+			rf.electionTimer = time.NewTimer(rf.timeout)
 			rf.mu.Unlock()
 			rf.WriteLog("Unlock 11")
 			break
 
-		case <-rf.candidateTimer.C:
+		case <-rf.electionTimer.C:
 			//case <- rf.restartElectionChan:
 			rf.mu.Lock()
 			rf.WriteLog("lock 12")
-			StopTimer(rf.candidateTimer)
+			StopTimer(rf.electionTimer)
 			rf.mu.Unlock()
 			rf.WriteLog("Unlock 12")
 
@@ -508,4 +509,8 @@ func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *Ap
 	// blocking
 	ok := rf.peers[server].Call("Raft.AppendEntries", args, reply)
 	return ok
+}
+
+func getTimeout() time.Duration {
+	return time.Duration(3+rand.Intn(22)) * heartbeatInterval
 }

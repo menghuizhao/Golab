@@ -33,8 +33,7 @@ type Raft struct {
 	matchIndex []int
 
 	// Utility
-	followerTimer       *time.Timer
-	candidateTimer      *time.Timer
+	electionTimer       *time.Timer
 	myVotes             int
 	replyVoteCounter    int
 	resetFollowerChan   chan bool
@@ -43,6 +42,7 @@ type Raft struct {
 	stopFollowerChan    chan bool
 	stopCandidateChan   chan bool
 	stopLeaderChan      chan bool
+	timeout             time.Duration
 }
 
 type ApplyMsg struct {
@@ -114,6 +114,4 @@ func (state State) String() string {
 	}
 }
 
-const candidateElectionTimeLimit = 2000 * time.Millisecond
-
-const heartbeatInterval = 201 * time.Millisecond
+const heartbeatInterval = 101 * time.Millisecond
