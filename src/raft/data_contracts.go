@@ -33,16 +33,10 @@ type Raft struct {
 	matchIndex []int
 
 	// Utility
-	electionTimer       *time.Timer
-	myVotes             int
-	replyVoteCounter    int
-	resetFollowerChan   chan bool
-	resetCandidateChan  chan bool
-	restartElectionChan chan bool
-	stopFollowerChan    chan bool
-	stopCandidateChan   chan bool
-	stopLeaderChan      chan bool
-	timeout             time.Duration
+	electionTimer   *time.Timer
+	electionTimeout time.Duration
+	roleChan        chan State
+	myVotes         int
 }
 
 type ApplyMsg struct {
@@ -85,9 +79,6 @@ type LogEntry struct {
 	Command string
 	Term    int
 }
-
-type GetProperties func(rf *Raft) interface{}
-type SetProperties func(rf *Raft)
 
 /*
 	Constants

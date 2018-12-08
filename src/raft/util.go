@@ -1,6 +1,9 @@
 package raft
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 // Debugging
 const Debug = 1
@@ -12,9 +15,25 @@ func DPrintf(format string, a ...interface{}) (n int, err error) {
 	return
 }
 
-func (rf *Raft) WriteLog(format string) {
-	DPrintf("Raft Server %d: %s.", rf.me, format)
+func (rf *Raft) WriteLog(message string, format ...interface{}) {
+	var m string
+	if format == nil {
+		m = message
+	} else {
+		m = fmt.Sprintf(message, format...)
+	}
+	DPrintf("Raft Server %d: %s.", rf.me, m)
 	return
+}
+
+func (rf *Raft) Lock(info interface{}) {
+	rf.mu.Lock()
+	rf.WriteLog("Lock %d", info)
+}
+
+func (rf *Raft) Unlock(info interface{}) {
+	rf.mu.Unlock()
+	rf.WriteLog("Unlock %d", info)
 }
 
 /*
