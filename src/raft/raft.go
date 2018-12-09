@@ -178,7 +178,7 @@ func (rf *Raft) sendHeartbeat() {
 			rf.Unlock(12)
 			return
 		}
-		appendEntriesReply := &AppendEntriesReply{}
+
 		appendEntriesArgs := &AppendEntriesArgs{
 			LeaderId: rf.me,
 			Term:     rf.currentTerm,
@@ -189,6 +189,7 @@ func (rf *Raft) sendHeartbeat() {
 			if i != rf.me {
 				go func(i int, rf *Raft) {
 					rf.WriteLog(fmt.Sprintf("Sending append Entries to Raft Server %d", i))
+					appendEntriesReply := &AppendEntriesReply{}
 					if rf.sendAppendEntries(i, appendEntriesArgs, appendEntriesReply) {
 						rf.Lock(13)
 						defer rf.Unlock(13)
